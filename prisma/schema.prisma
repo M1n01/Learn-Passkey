@@ -4,8 +4,68 @@ generator client {
   output   = "../src/generated/prisma" // srcディレクトリを使う場合
 }
 
+generator zod {
+  provider          = "zod-prisma-types"
+  useMultipleFiles  = true
+  writeBarrelFiles  = false
+  useTypeAssertions = true
+  output            = "../src/generated/zod"
+}
+
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL") // マイグレーション用
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationship to passkeys
+  passkeys Passkey[]
+
+  @@map("users")
+}
+
+model Passkey {
+  id             String   @id // Base64URLString
+  publicKey      Bytes // Store raw bytes
+  userId         String // Foreign key to User
+  webauthnUserID String // Base64URLString
+  counter        BigInt   @default(0)
+  deviceType     String // 'singleDevice' | 'multiDevice'
+  backedUp       Boolean  @default(false)
+  transports     String? // CSV string of transport methods
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relationship to user
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([webauthnUserID, userId]) // Ensures maximum user privacy
+  // Indexes for performance
+  @@index([id])
+  @@index([webauthnUserID])
+  @@map("passkeys")
+}
+
+model WebAuthnSession {
+  id          String      @id
+  userId      String?
+  challenge   String
+  sessionType SessionType @map("session_type")
+  expiresAt   DateTime    @map("expires_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("webauthn_sessions")
+}
+
+enum SessionType {
+  registration
+  authentication
 }
