@@ -5,6 +5,7 @@ import LoginIcon from "@mui/icons-material/Login";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import {
+  Alert,
   Box,
   Button,
   Container,
@@ -13,6 +14,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import type { RegistrationResponseJSON } from "@simplewebauthn/browser";
+import { startRegistration, WebAuthnError } from "@simplewebauthn/browser";
 import { useState } from "react";
 
 import styles from "./page.module.css";
@@ -20,8 +23,13 @@ import styles from "./page.module.css";
 export default function AuthPage() {
   const [tab, setTab] = useState("login");
   const [username, setUsername] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
+    setIsLoading(true);
+    setError(null);
+
     const optionsResponse = await fetch(
       "/api/authn/passkey/registration/options",
       {
@@ -33,9 +41,25 @@ export default function AuthPage() {
 
     console.log(options, sessionId);
 
-    // TODO: パスキーを登録
-    // TODO: 登録を検証
-    // TODO: パスキーを削除
+    try {
+      // パスキーを登録
+      const registrationResponse: RegistrationResponseJSON =
+        await startRegistration({
+          optionsJSON: options,
+        });
+      console.log(registrationResponse);
+
+      // TODO: 登録を検証
+    } catch (error) {
+      if (error instanceof WebAuthnError) {
+        setError(error.message);
+      } else {
+        setError("パスキーの登録に失敗しました");
+      }
+    } finally {
+      setIsLoading(false);
+      // TODO: パスキーを削除
+    }
   };
 
   return (
@@ -114,6 +138,8 @@ export default function AuthPage() {
                     startIcon={<FingerprintIcon />}
                     className={`${styles.button} ${styles.buttonSecondary}`}
                     onClick={handleRegister}
+                    disabled={isLoading}
+                    loading={isLoading}
                   >
                     パスキーで新規登録
                   </Button>
@@ -121,6 +147,7 @@ export default function AuthPage() {
               </TabPanel>
             </Box>
           </TabContext>
+          {error && <Alert severity="error">{error}</Alert>}
         </Paper>
       </Container>
     </Box>
