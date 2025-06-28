@@ -1,0 +1,11 @@
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../node_modules/.prisma/client" // デフォルト
+  output   = "../src/generated/prisma" // srcディレクトリを使う場合
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // マイグレーション用
+}
