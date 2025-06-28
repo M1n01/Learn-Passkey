@@ -19,6 +19,24 @@ import styles from "./page.module.css";
 
 export default function AuthPage() {
   const [tab, setTab] = useState("login");
+  const [username, setUsername] = useState("");
+
+  const handleRegister = async () => {
+    const optionsResponse = await fetch(
+      "/api/authn/passkey/registration/options",
+      {
+        method: "POST",
+        body: JSON.stringify({ username }),
+      },
+    );
+    const { options, sessionId } = await optionsResponse.json();
+
+    console.log(options, sessionId);
+
+    // TODO: パスキーを登録
+    // TODO: 登録を検証
+    // TODO: パスキーを削除
+  };
 
   return (
     <Box className={styles.bg}>
@@ -85,6 +103,8 @@ export default function AuthPage() {
                     margin="normal"
                     variant="outlined"
                     sx={{ mb: 2 }}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
                   <Button
                     variant="contained"
@@ -93,6 +113,7 @@ export default function AuthPage() {
                     fullWidth
                     startIcon={<FingerprintIcon />}
                     className={`${styles.button} ${styles.buttonSecondary}`}
+                    onClick={handleRegister}
                   >
                     パスキーで新規登録
                   </Button>
