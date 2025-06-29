@@ -126,12 +126,35 @@ export default function AuthPage() {
           optionsJSON,
         });
 
-      console.log(authenticationResponse);
+      const verificationResponse = await fetch(
+        "/api/authn/passkey/authentication/verify",
+        {
+          method: "POST",
+          body: JSON.stringify({ authenticationResponse, sessionId }),
+        },
+      );
+
+      if (!verificationResponse.ok) {
+        setError("パスキーのログインに失敗しました");
+        return;
+      } else {
+        const { user } = await verificationResponse.json();
+        login({
+          id: user.id,
+          username: user.username,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        setComplete(true);
+        setTimeout(() => {
+          router.push("/");
+        }, 1500);
+      }
     } catch (error) {
       if (error instanceof WebAuthnError) {
         setError(error.message);
       } else {
-        setError("パスキーの登録に失敗しました");
+        setError("パスキーのログインに失敗しました");
       }
     } finally {
       setIsLoading(false);
