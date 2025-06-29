@@ -8,11 +8,15 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Appshell({ children }: { children: React.ReactNode }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const { logout } = useAuth();
+  const router = useRouter();
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -20,9 +24,10 @@ export default function Appshell({ children }: { children: React.ReactNode }) {
   const handleClose = () => {
     setAnchorEl(null);
   };
-  const handleLogout = () => {
-    // ログアウト処理をここに記述
+  const handleLogout = async () => {
+    logout();
     handleClose();
+    router.push("/authn");
   };
 
   return (
