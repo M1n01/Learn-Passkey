@@ -94,9 +94,9 @@ export default function AuthPage() {
     } finally {
       setIsLoading(false);
       // チャレンジを削除
-      await fetch("/api/authn/passkey/registration/delete", {
-        method: "POST",
-        body: JSON.stringify({ sessionId }),
+      await fetch("/api/authn/passkey/registration/session", {
+        method: "DELETE",
+        body: JSON.stringify({ sessionId, sessionType: "registration" }),
       });
     }
   };
