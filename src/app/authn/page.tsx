@@ -101,6 +101,21 @@ export default function AuthPage() {
     }
   };
 
+  const handleLogin = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    const optionsResponse = await fetch(
+      "/api/authn/passkey/authentication/options",
+      {
+        method: "GET",
+      },
+    );
+    const { optionsJSON, sessionId } = await optionsResponse.json();
+
+    console.log(optionsJSON, sessionId);
+  };
+
   return (
     <Box className={styles.bg}>
       <Container maxWidth="xs" sx={{ px: { xs: 0, sm: 2 } }}>
@@ -145,6 +160,9 @@ export default function AuthPage() {
                     fullWidth
                     startIcon={<FingerprintIcon />}
                     className={styles.button}
+                    onClick={handleLogin}
+                    disabled={isLoading}
+                    loading={isLoading}
                   >
                     パスキーでログイン
                   </Button>
