@@ -14,8 +14,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { RegistrationResponseJSON } from "@simplewebauthn/browser";
-import { startRegistration, WebAuthnError } from "@simplewebauthn/browser";
+import type {
+  AuthenticationResponseJSON,
+  RegistrationResponseJSON,
+} from "@simplewebauthn/browser";
+import {
+  startAuthentication,
+  startRegistration,
+  WebAuthnError,
+} from "@simplewebauthn/browser";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -113,7 +120,26 @@ export default function AuthPage() {
     );
     const { optionsJSON, sessionId } = await optionsResponse.json();
 
-    console.log(optionsJSON, sessionId);
+    try {
+      const authenticationResponse: AuthenticationResponseJSON =
+        await startAuthentication({
+          optionsJSON,
+        });
+
+      console.log(authenticationResponse);
+    } catch (error) {
+      if (error instanceof WebAuthnError) {
+        setError(error.message);
+      } else {
+        setError("パスキーの登録に失敗しました");
+      }
+    } finally {
+      setIsLoading(false);
+      await fetch("/api/authn/passkey/registration/session", {
+        method: "DELETE",
+        body: JSON.stringify({ sessionId, sessionType: "authentication" }),
+      });
+    }
   };
 
   return (
