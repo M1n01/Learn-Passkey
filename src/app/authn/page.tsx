@@ -16,7 +16,9 @@ import {
 } from "@mui/material";
 import type { RegistrationResponseJSON } from "@simplewebauthn/browser";
 import { startRegistration, WebAuthnError } from "@simplewebauthn/browser";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 import styles from "./page.module.css";
 
@@ -25,6 +27,10 @@ export default function AuthPage() {
   const [username, setUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [complete, setComplete] = useState(false);
+
+  const { login } = useAuth();
+  const router = useRouter();
 
   const handleRegister = async () => {
     setIsLoading(true);
@@ -47,9 +53,38 @@ export default function AuthPage() {
         await startRegistration({
           optionsJSON: options,
         });
-      console.log(registrationResponse);
 
-      // TODO: 登録を検証
+      // 登録を検証
+      const verificationResponse = await fetch(
+        "/api/authn/passkey/registration/verify",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            registrationResponse,
+            sessionId,
+            user: {
+              id: options.user.id,
+              username,
+            },
+          }),
+        },
+      );
+
+      if (!verificationResponse.ok) {
+        setError("パスキーの登録に失敗しました");
+        return;
+      }
+
+      login({
+        id: options.user.id,
+        username,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      setComplete(true);
+      setTimeout(() => {
+        router.push("/");
+      }, 1500);
     } catch (error) {
       if (error instanceof WebAuthnError) {
         setError(error.message);
@@ -58,7 +93,11 @@ export default function AuthPage() {
       }
     } finally {
       setIsLoading(false);
-      // TODO: パスキーを削除
+      // チャレンジを削除
+      await fetch("/api/authn/passkey/registration/delete", {
+        method: "POST",
+        body: JSON.stringify({ sessionId }),
+      });
     }
   };
 
@@ -148,6 +187,11 @@ export default function AuthPage() {
             </Box>
           </TabContext>
           {error && <Alert severity="error">{error}</Alert>}
+          {complete && (
+            <Alert severity="success">
+              パスキーの登録が完了しました。リダイレクトします...
+            </Alert>
+          )}
         </Paper>
       </Container>
     </Box>
